@@ -1,0 +1,113 @@
+# # Global project settings
+configuration:
+  dependencies:
+  - mvn://com.walmartlabs.concord.plugins:git:1.40.0
+  
+  arguments:
+    project_name: "oyi-ds-vertex"
+    project_id: "wmt-mlp-p-oyi-ds-or-oyi-dsns"
+    project_repo: "https://gecgithub01.walmart.com/SamsDSE/oyi-ds-vertex.git"
+    concord_org: "Sams-Data-and-Analytics"
+    gcp_key_secret: "oyi-ds-vertex-gcp-cronjob-key"
+    #"wmt-mlp-p-oyi-ds-or-oyi-dsns-cronjob-key"
+    githubParam:
+      org: "SamsDSE"
+      repo: "oyi-ds-vertex"
+    head:
+      commitSHA: ${event.payload.pull_request.head.sha}
+      repo: ${event.payload.pull_request.head.repo.name}
+      org: ${event.payload.organization.login}
+      branch: ${event.payload.pull_request.head.ref}
+      prNumber: ${event.payload.pull_request.number}
+    base:
+      branch: ${event.payload.pull_request.base.ref}
+     
+  runtime: "concord-v2"
+
+flows:
+  default:
+    - log: "--------- Start Deployment ---------"
+    - log: "Google Cloud Project of ${project_name}"
+    - call: NosalesCron
+      in:
+        project: ${project_name}
+        
+  NosalesCron:
+    - log: "--------- Start Nosales Job ---------"
+    - expr: ${resource.asYaml('settings.yml')}
+      out: settingsYmlObj
+    - log: "${settingsYmlObj.envs.stage.PROJECT_ID}, ${settingsYmlObj.envs.stage.SERVICE_ACCOUNT}, ${settingsYmlObj.env_flag}"
+    - log: "Google Cloud Project: ${project_id}"
+    - set:
+        gcp_secrets_file: ${crypto.exportAsFile(concord_org, gcp_key_secret, null)}
+    - log: "${event.sender} pushed ${event.commitId} to ${event.payload.repository.full_name}"
+    - log: "ProjectId: ${project_id}"
+    - log: "GCP Secret File: ${gcp_secrets_file}"
+    - log: "head.commitSHA: ${head.commitSHA}"
+    - task: docker
+      in:
+        image: docker.prod.walmart.com/google-cloud-vertex-pipelines-cicd/vertex-pipelines-base:latest
+        cmd: |
+          export GOOGLE_APPLICATION_CREDENTIALS="/workspace/${gcp_secrets_file}";
+          gcloud auth activate-service-account svc-oyi-ds-or-oyi-dsns-admin@${project_id}.iam.gserviceaccount.com --key-file=${gcp_secrets_file};
+          gcloud config set project ${project_id};    
+          echo "Activated Service account";
+          echo "Build ${txId}";
+          gcloud auth list;
+          echo "Installing requirements: "
+          pip install -r requirements.txt
+          echo "Building and Running Vertex Pipeline";
+          cd /workspace/src/pipeline
+          python cron_training.py --COMMIT_ID 1234 --BRANCH "stage" --is_prod False
+    
+  ClubscorecutoffCron:
+    - log: "--------- Start Clubscorecutoff Job ---------"
+    - expr: ${resource.asYaml('settings.yml')}
+      out: settingsYmlObj
+    - log: "${settingsYmlObj.envs.stage.PROJECT_ID}, ${settingsYmlObj.envs.stage.SERVICE_ACCOUNT}, ${settingsYmlObj.env_flag}"
+    - log: "Google Cloud Project: ${project_id}"
+    - set:
+        gcp_secrets_file: ${crypto.exportAsFile(concord_org, gcp_key_secret, null)}
+    - log: "${event.sender} pushed ${event.commitId} to ${event.payload.repository.full_name}"
+    - log: "ProjectId: ${project_id}"
+    - log: "GCP Secret File: ${gcp_secrets_file}"
+    - log: "head.commitSHA: ${head.commitSHA}"
+    - task: docker
+      in:
+        image: docker.prod.walmart.com/google-cloud-vertex-pipelines-cicd/vertex-pipelines-base:latest
+        cmd: |
+          export GOOGLE_APPLICATION_CREDENTIALS="/workspace/${gcp_secrets_file}";
+          gcloud auth activate-service-account svc-oyi-ds-or-oyi-dsns-admin@${project_id}.iam.gserviceaccount.com --key-file=${gcp_secrets_file};
+          gcloud config set project ${project_id};    
+          echo "Activated Service account";
+          echo "Build ${txId}";
+          gcloud auth list;
+          echo "Installing requirements: "
+          pip install -r requirements.txt
+          echo "Building and Running Vertex Pipeline";
+          cd /workspace/src/pipeline
+          python club_score_cutoff_pipeline.py --COMMIT_ID 1234 --BRANCH "stage" --is_prod False
+    
+triggers:
+  - cron:
+      entryPoint: NosalesCron
+      timezone: "America/Chicago"
+      spec: "0 11 * * Sun"
+      
+  - cron:
+      entryPoint: ClubscorecutoffCron
+      timezone: "America/Chicago"
+      spec: "0 14 * * Fri"
+      
+  - github:
+      version: 2
+      useInitiator: false
+      ignoreEmptyPush: false
+      entryPoint: default
+      conditions:
+        type: "pull_request"
+        status: "closed"
+        branch: ".*"
+        payload:
+          pull_request:
+            merged: true

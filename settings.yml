@@ -1,0 +1,182 @@
+type: vertex-training
+version: v1
+
+details:
+  email:
+    - "<>"
+  slack: "<>"
+  
+deploy:
+  approval: # <MANDATORY> approval details for prod goes here. Either an AD group or members list is supported
+    group:
+      "<>" # Update the AD group for prod deployment later
+      # members:
+      #   - "<member-id>"
+
+# set up `dev` for feature -> main (dev) 
+# set up `stage` for main -> release (stage)
+# set up `prod` for release 
+env_flag: dev
+# dummy run pipeline for stage. 
+
+envs:
+  dev:
+    VPC_NETWORK: "<>"
+    # Region in which pipeline runs for provision gcp
+    REGION: "us-central1"
+    # Base image location and version in the container which will run each task of the pipeline
+    BASE_IMAGE: "gcr.io/wmt-mlp-p-oyi-ds-or-oyi-dsns/oyi-vertex-pipeline-dev:latest" 
+    # Project ID for GCP
+    PROJECT_ID: "wmt-mlp-p-oyi-ds-or-oyi-dsns"
+    
+    # MLFlow image location and version, MLFlow name, and Model registry name as OYI No Sales model
+    MLFLOW_IMAGE: "gcr.io/wmt-mlp-p-oyi-ds-or-oyi-dsns/mlflow-image-dev:latest"
+    MLFLOW_EXP_NAME: "oyi_training_dev"
+    MODEL_REGISTRY_NAME: "oyi_nosales_model_dev" 
+    
+    # # Version transition image location and version
+    TRANSITION_IMAGE: "gcr.io/wmt-mlp-p-oyi-ds-or-oyi-dsns/version-transition-dev:latest"
+    
+    # Run the pipeline when deployment is triggered for each env; OYI No Sales model pipeline, json format, and the location to store
+    RUN_PIPELINE: True
+    PIPELINE_NAME: "oyi-nosales-model-pipeline-dev"
+    PIPELINE_JSON: "oyi-nosales-model-pipeline-dev.json"
+    PIPELINE_ROOT: "gs://oyi-ds-vertex-pipeline-bucket-nonprod"
+    GCS_URI: "gs://oyi-ds-vertex-pipeline-bucket-nonprod/"
+    
+    LATEST_NOSALES_MODEL_PATH: "gs://oyi-ds-vertex-pipeline-bucket-nonprod/latest_nosales_model_output_dev"
+    LATEST_PIPELINE_PATH: "gs://oyi-ds-vertex-pipeline-bucket-nonprod/latest_training_pipeline_dev.json"
+    
+    # Club Threshold model pipeline, json format, and the location to store
+    CLUB_THRESH_PIPELINE_NAME: "oyi-ds-club-score-cutoff-pipeline-bucket-dev"
+    CLUB_THRESH_PIPELINE_JSON: "oyi-ds-club-score-cutoff-pipeline-bucket-dev.json"
+    CLUB_THRESH_PIPELINE_ROOT: "gs://oyi-ds-club-score-cutoff-pipeline-bucket-nonprod"
+    
+    CLUB_THRESH_PATH: "gs://oyi-ds-club-score-cutoff-pipeline-bucket-nonprod/latest_club_thresh_chain_dev"
+    
+    CLUB_THRESH_LATEST_PIPELINE_PATH: "gs://oyi-ds-club-score-cutoff-pipeline-bucket-nonprod/latest_pipeline_dev.json"
+    
+    # GCP Service account
+    SERVICE_ACCOUNT: "svc-oyi-ds-or-oyi-dsns-admin@wmt-mlp-p-oyi-ds-or-oyi-dsns.iam.gserviceaccount.com"
+    
+    # Training table name, the lastest version of Club Threshold model with its pipeline, No Sales with its pipeline.
+    TRAINING_TABLE_NAME: "oyi_prod.oyi_train_no_testscan"
+    
+    # Model Parameters
+    MODE: "test" 
+    STAGE1_FLAG : "train"
+    ENSEMBLE_FLAG: "train" 
+    RF_CLF_MODEL_PATH: "" 
+    LOGISTIC_CLF_MODEL_PATH: "" 
+    STAGE1_NN_MODEL_PATH: "" 
+    GNB_MODEL_PATH: "" 
+    STG1_FEATURE_SELECTOR_MODEL_PATH: ""
+    NOSALES_MODEL_PATH: ""
+    
+    
+  stage:
+    VPC_NETWORK: "<>"
+    # Region in which pipeline runs for provision gcp
+    REGION: "us-central1"
+    # Base image location and version in the container which will run each task of the pipeline
+    BASE_IMAGE: "gcr.io/wmt-mlp-p-oyi-ds-or-oyi-dsns/oyi-vertex-pipeline-stage:latest"
+    # Project ID for GCP
+    PROJECT_ID: "wmt-mlp-p-oyi-ds-or-oyi-dsns"
+    
+    # MLFlow image location and version, MLFlow name, and Model registry name as OYI No Sales model
+    MLFLOW_IMAGE: "gcr.io/wmt-mlp-p-oyi-ds-or-oyi-dsns/mlflow-image-stage:latest"
+    MLFLOW_EXP_NAME: "oyi_training_stage"
+    MODEL_REGISTRY_NAME: "oyi_nosales_model_stage" 
+    
+    # # Version transition image location and version
+    TRANSITION_IMAGE: "gcr.io/wmt-mlp-p-oyi-ds-or-oyi-dsns/version-transition-stage:latest"
+    
+    # Run the pipeline when deployment is triggered for each env; OYI No Sales model pipeline, json format, and the location to store
+    RUN_PIPELINE: True
+    PIPELINE_NAME: "oyi-nosales-model-pipeline-stage"
+    PIPELINE_JSON: "oyi-nosales-model-pipeline-stage.json"
+    PIPELINE_ROOT: "gs://oyi-ds-vertex-pipeline-bucket-nonprod"
+    GCS_URI: "gs://oyi-ds-vertex-pipeline-bucket-nonprod/"
+    
+    
+    LATEST_NOSALES_MODEL_PATH: "gs://oyi-ds-vertex-pipeline-bucket-nonprod/latest_nosales_model_output_stage"
+    LATEST_PIPELINE_PATH: "gs://oyi-ds-vertex-pipeline-bucket-nonprod/latest_training_pipeline_stage.json"
+    
+    # Club Threshold model pipeline, json format, and the location to store
+    # RUN_CLUB_THRESH_PIPELINE: True
+    CLUB_THRESH_PIPELINE_NAME: "oyi-ds-club-score-cutoff-pipeline-bucket-stage"
+    CLUB_THRESH_PIPELINE_JSON: "oyi-ds-club-score-cutoff-pipeline-bucket-stage.json"
+    CLUB_THRESH_PIPELINE_ROOT: "gs://oyi-ds-club-score-cutoff-pipeline-bucket-nonprod"
+    
+    CLUB_THRESH_PATH: "gs://oyi-ds-club-score-cutoff-pipeline-bucket-nonprod/latest_club_thresh_chain_stage"
+    CLUB_THRESH_LATEST_PIPELINE_PATH: "gs://oyi-ds-club-score-cutoff-pipeline-bucket-nonprod/latest_pipeline_stage.json"
+    
+    # GCP Service account
+    SERVICE_ACCOUNT: "<>"
+    
+    # Training table name, the lastest version of Club Threshold model with its pipeline, No Sales with its pipeline.
+    TRAINING_TABLE_NAME: "oyi_prod.oyi_train_no_testscan"
+    
+    # Model Parameters
+    MODE: "test" 
+    STAGE1_FLAG : "train"
+    ENSEMBLE_FLAG: "train" 
+    RF_CLF_MODEL_PATH: "" 
+    LOGISTIC_CLF_MODEL_PATH: "" 
+    STAGE1_NN_MODEL_PATH: "" 
+    GNB_MODEL_PATH: "" 
+    STG1_FEATURE_SELECTOR_MODEL_PATH: ""
+    NOSALES_MODEL_PATH: ""
+    
+  prod:
+    VPC_NETWORK: "<>"
+    # Region in which pipeline runs for provision gcp
+    REGION: "us-central1"
+    # Base image location and version in the container which will run each task of the pipeline
+    BASE_IMAGE: "gcr.io/wmt-mlp-p-oyi-ds-or-oyi-dsns/oyi-vertex-pipeline-prod:latest"
+    # Project ID for GCP
+    PROJECT_ID: "wmt-mlp-p-oyi-ds-or-oyi-dsns"
+    
+    # MLFlow image location and version, MLFlow name, and Model registry name as OYI No Sales model
+    MLFLOW_IMAGE: "gcr.io/wmt-mlp-p-oyi-ds-or-oyi-dsns/mlflow-image-prod:latest"
+    MLFLOW_EXP_NAME: "oyi_training_prod"
+    MODEL_REGISTRY_NAME: "oyi_nosales_model_prod" 
+    
+    # # Version transition image location and version
+    TRANSITION_IMAGE: "gcr.io/wmt-mlp-p-oyi-ds-or-oyi-dsns/version-transition-prod:latest"
+    
+    # Run the pipeline when deployment is triggered for each env; OYI No Sales model pipeline, json format, and the location to store
+    RUN_PIPELINE: False
+    PIPELINE_NAME: "oyi-nosales-model-pipeline-prod"
+    PIPELINE_JSON: "oyi-nosales-model-pipeline-prod.json"
+    PIPELINE_ROOT: "gs://oyi-ds-vertex-pipeline-bucket-prod"
+    GCS_URI: "gs://oyi-ds-vertex-pipeline-bucket-prod/"
+    
+    LATEST_PIPELINE_PATH: "gs://oyi-ds-vertex-pipeline-bucket-prod/latest_training_pipeline_prod.json"
+    LATEST_NOSALES_MODEL_PATH: "gs://oyi-ds-vertex-pipeline-bucket-prod/latest_nosales_model_output_prod"
+    
+    # Club Threshold model pipeline, json format, and the location to store
+    RUN_CLUB_THRESH_PIPELINE: False
+    CLUB_THRESH_PIPELINE_NAME: "oyi-ds-club-score-cutoff-pipeline-bucket-prod"
+    CLUB_THRESH_PIPELINE_JSON: "oyi-ds-club-score-cutoff-pipeline-bucket-prod.json"
+    CLUB_THRESH_PIPELINE_ROOT: "gs://oyi-ds-club-score-cutoff-pipeline-bucket-prod"
+    
+    CLUB_THRESH_PATH: "gs://oyi-ds-club-score-cutoff-pipeline-bucket-prod/latest_club_thresh_chain_prod"
+    CLUB_THRESH_LATEST_PIPELINE_PATH: "gs://oyi-ds-club-score-cutoff-pipeline-bucket-prod/latest_pipeline_prod.json"
+    
+    # GCP Service account
+    SERVICE_ACCOUNT: "svc-oyi-ds-or-oyi-dsns-admin@wmt-mlp-p-oyi-ds-or-oyi-dsns.iam.gserviceaccount.com"
+    
+    # Training table name, the lastest version of Club Threshold model with its pipeline, No Sales with its pipeline.
+    TRAINING_TABLE_NAME: "oyi_prod.oyi_train_no_testscan"
+    
+    # Model Parameters
+    MODE: "test" 
+    STAGE1_FLAG : "train"
+    ENSEMBLE_FLAG: "train" 
+    RF_CLF_MODEL_PATH: "" 
+    LOGISTIC_CLF_MODEL_PATH: "" 
+    STAGE1_NN_MODEL_PATH: "" 
+    GNB_MODEL_PATH: "" 
+    STG1_FEATURE_SELECTOR_MODEL_PATH: ""
+    NOSALES_MODEL_PATH: ""

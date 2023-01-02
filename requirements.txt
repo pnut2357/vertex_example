@@ -1,0 +1,8 @@
+google_cloud_pipeline_components==1.0.7
+kfp==1.8.14
+google-cloud-storage==1.44.0
+google-cloud-aiplatform==1.13.0
+pytest
+pyspark
+google-cloud-secret-manager
+proto-plus==1.22.0

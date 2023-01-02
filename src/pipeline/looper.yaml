@@ -1,0 +1,26 @@
+docker:
+  - name: "dockguardImage"
+    image: "docker.prod.walmart.com/google-cloud-vertex-pipelines-cicd/gcloud-looper-agent-docker:latest"
+
+parameters:
+- sa_key: { type: string}
+- PIPELINE_FOLDER: { type: string}
+- PIPELINE_IMAGE_NAME: { type: string}
+- PIPELINE_IMAGE_DIR: { type: string}
+- PIPELINE_TAG: { type: string}
+envs:
+  global:
+    variables:
+      REGISTRY: "docker.prod.walmart.com"
+      FOLDER: ${PIPELINE_FOLDER}
+      IMAGE_NAME: ${PIPELINE_IMAGE_NAME}
+      IMAGE_DIR: ${PIPELINE_IMAGE_DIR}
+      TAG: ${PIPELINE_TAG}
+
+flows:
+  default:
+    - echo "Building and Deploying to ${REGISTRY}"
+    - node(docker-daemon):
+      - dockguardAgent(dockguardImage): |
+          docker build -t ${REGISTRY}/${FOLDER}/${IMAGE_NAME}:${TAG} -f ./src/pipeline/Dockerfile ${IMAGE_DIR} &&
+          docker push ${REGISTRY}/${FOLDER}/${IMAGE_NAME}:${TAG};
